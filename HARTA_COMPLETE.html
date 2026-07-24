@@ -3499,19 +3499,25 @@
     // GPS Tracking Functions
     async function fetchVehiclePositions() {
       try {
-        // IMPORTANT: Verifică endpoint-ul exact din documentația Nexus GPS!
-        const response = await fetch(`${GPS_API_BASE}/positions/latest`, {
+        // Nexus GPS API: POST request with form-data
+        const url = `https://www.gpstracking.ro/api`;
+        const formData = new URLSearchParams();
+        formData.append('getVehicleStatus', GPS_API_KEY);
+        // Omit cars[] param → returns ALL vehicles in account
+
+        const response = await fetch(url, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${GPS_API_KEY}`,
-            // SAU dacă API-ul folosește query param:
-            // (în acest caz, URL-ul devine: `${GPS_API_BASE}/positions/latest?api_key=${GPS_API_KEY}`)
-          }
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: formData
         });
 
         if (!response.ok) throw new Error(`GPS API error: ${response.status}`);
 
-        const data = await response.json();
-        return data.devices || data.positions || data; // Adaptează la structura reală
+        const vehicles = await response.json(); // Array of vehicle objects
+        console.log(`✅ GPS API SUCCESS: ${vehicles.length} vehicule`);
+        return vehicles;
       } catch (error) {
         console.error('❌ Failed to fetch vehicle positions:', error);
         return [];
@@ -3540,24 +3546,30 @@
 
       const marker = L.marker([vehicle.lat, vehicle.lon], { icon });
 
-      // Popup cu detalii vehicul
+      // Popup cu detalii vehicul (Nexus GPS API structure)
       const speed = vehicle.speed || 0;
-      const status = vehicle.status || (speed > 5 ? 'În mișcare' : 'Oprit');
-      const lastUpdate = vehicle.timestamp ? new Date(vehicle.timestamp).toLocaleTimeString('ro-RO') : 'N/A';
+      const status = vehicle.isStopped ? 'Oprit' : (speed > 5 ? 'În mișcare' : 'Idle');
+      const plate = vehicle.license_plate || '-';
+      const driver = vehicle.driverName || 'N/A';
 
       const popupContent = `
-        <div style="font-family: 'IBM Plex Sans', sans-serif; min-width: 200px;">
+        <div style="font-family: 'IBM Plex Sans', sans-serif; min-width: 220px;">
           <h3 style="margin: 0 0 8px 0; color: #ef4444; font-size: 16px;">🚗 ${vehicle.name || `Vehicul #${vehicle.id}`}</h3>
           <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
-            <strong>Status:</strong> ${status}
+            <strong>Număr:</strong> ${plate}
           </div>
           <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
-            <strong>Viteză:</strong> ${speed.toFixed(0)} km/h
+            <strong>Status:</strong> ${status} (${speed.toFixed(0)} km/h)
           </div>
           <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
-            <strong>Ultima actualizare:</strong> ${lastUpdate}
+            <strong>Șofer:</strong> ${driver}
           </div>
-          ${vehicle.heading ? `<div style="font-size: 13px; color: #64748b;"><strong>Direcție:</strong> ${vehicle.heading}°</div>` : ''}
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>Direcție:</strong> ${vehicle.heading || 0}°
+          </div>
+          <div style="font-size: 13px; color: #64748b;">
+            <strong>Kilometraj:</strong> ${Math.round(vehicle.odo || 0)} km
+          </div>
         </div>
       `;
 
