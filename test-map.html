@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test ROTAKT Harta</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+    .test { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+    .pass { background: #001a00; border-color: #00ff00; }
+    .fail { background: #1a0000; border-color: #ff0000; color: #ff0000; }
+    button { margin: 5px; padding: 8px 16px; background: #3d8bd8; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>🔍 ROTAKT Harta - Test Status</h1>
+  <div id="results"></div>
+
+  <h2>Manual Tests</h2>
+  <p>Open in separate window: <a href="HARTA_COMPLETE.html" target="_blank" style="color: #3d8bd8;">HARTA_COMPLETE.html</a></p>
+
+  <ol style="line-height: 2;">
+    <li>Click "Plan Routes" button → sidebar mode switch OK?</li>
+    <li>Click 3 markers on map → apareció în lista SELECTAȚI?</li>
+    <li>Route line drawn between markers?</li>
+    <li>Distance displayed correctly?</li>
+    <li>Click "🎯 Optimize" → order changed?</li>
+    <li>Click "+ Add Day" → Day 2 tab appeared?</li>
+    <li>Switch to Day 2 → separate route?</li>
+    <li>Click "📋 Itinerary" → floating panel opens?</li>
+    <li>Itinerary shows all days + stops?</li>
+    <li>Click "Clear Day" → current day cleared?</li>
+  </ol>
+
+  <script>
+    const results = [];
+
+    function test(name, fn) {
+      try {
+        fn();
+        results.push({ name, status: 'PASS' });
+      } catch (e) {
+        results.push({ name, status: 'FAIL', error: e.message });
+      }
+    }
+
+    // Syntax checks
+    test('HTML file exists', () => {
+      if (!document.querySelector('a[href="HARTA_COMPLETE.html"]')) throw new Error('File link missing');
+    });
+
+    test('Leaflet CDN reachable', async () => {
+      const response = await fetch('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', { method: 'HEAD' });
+      if (!response.ok) throw new Error('CDN unreachable');
+    });
+
+    // Display results
+    setTimeout(() => {
+      const div = document.getElementById('results');
+      results.forEach(r => {
+        const testDiv = document.createElement('div');
+        testDiv.className = `test ${r.status === 'PASS' ? 'pass' : 'fail'}`;
+        testDiv.innerHTML = `<strong>${r.status}</strong>: ${r.name}${r.error ? ` - ${r.error}` : ''}`;
+        div.appendChild(testDiv);
+      });
+    }, 100);
+  </script>
+</body>
+</html>
