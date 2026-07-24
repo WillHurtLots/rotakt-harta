@@ -1,0 +1,66 @@
+To: support@gpstracking.ro (SAU contact din contul vostru Nexus)
+Cc: office@rotakt.ro
+Subject: Activare API Key + Whitelist IP-uri GitHub Pages - SC ROTAKT SRL
+
+---
+
+Bună ziua,
+
+Confirmăm integrarea API GPS Tracking în aplicația noastră web (hartă interactivă vehicule).
+
+Vă rugăm să activați API Key-ul nostru și să adăugați IP-urile de mai jos în whitelist:
+
+📌 **API Key**: 833da4fa73ec523a68134e895621f681
+
+📌 **IP-uri GitHub Pages** (hosting aplicație):
+• 185.199.108.153
+• 185.199.109.153
+• 185.199.110.153
+• 185.199.111.153
+
+📌 **URL aplicație**: https://willhurtlots.github.io/rotakt-harta/
+
+📌 **Use case**: Dispatch dinamic vehicule + optimizare rute live pentru agenți comerciali
+
+---
+
+De asemenea, vă rugăm să ne furnizați documentație completă:
+
+1. **Endpoint exact** pentru poziții curente vehicule (URL complet)
+   - Exemplu: `https://gpstracking.ro/api/v1/vehicles/status?api_key=...`
+
+2. **Metoda de autentificare**:
+   - Header `Authorization: Bearer KEY`?
+   - Query param `?api_key=KEY`?
+   - Alt format?
+
+3. **Exemplu JSON response** pentru poziții vehicule:
+   ```json
+   {
+     "vehicles": [
+       {
+         "id": 123,
+         "name": "Vehicul 1",
+         "lat": 45.1071,
+         "lon": 24.3697,
+         "speed": 45,
+         "heading": 180,
+         "timestamp": "2026-07-24T14:30:00Z"
+       }
+     ]
+   }
+   ```
+
+4. **Parametri necesari** în request (device IDs, format, etc.)
+
+---
+
+**Timeline așteptat**: Preferabil 24-48h pentru finalizare dezvoltare.
+
+Mulțumim!
+
+**SC ROTAKT SRL**
+CUI: RO6334441
+Contact: office@rotakt.ro
+Telefon: 0350 226 000
+Adresă: Strada Depozitelor 28, Râmnicu Vâlcea

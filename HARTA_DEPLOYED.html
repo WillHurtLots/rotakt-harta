@@ -3499,29 +3499,25 @@
     // GPS Tracking Functions
     async function fetchVehiclePositions() {
       try {
-        // Use Vercel proxy to bypass CORS (GitHub Pages → Vercel → GPS API)
-        const isGitHubPages = window.location.hostname.includes('github.io');
-        const proxyURL = isGitHubPages
-          ? 'https://rotakt-harta.vercel.app/api/gps'  // Vercel proxy (CORS-enabled)
-          : '/api/gps';  // Local development
+        // Nexus GPS API: POST request with form-data
+        const url = `https://www.gpstracking.ro/api`;
+        const formData = new URLSearchParams();
+        formData.append('getVehicleStatus', GPS_API_KEY);
+        // Omit cars[] param → returns ALL vehicles in account
 
-        const response = await fetch(proxyURL, {
-          method: 'GET',  // Proxy handles POST to GPS API internally
+        const response = await fetch(url, {
+          method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: formData
         });
 
-        if (!response.ok) throw new Error(`GPS Proxy error: ${response.status}`);
+        if (!response.ok) throw new Error(`GPS API error: ${response.status}`);
 
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || 'Unknown GPS API error');
-        }
-
-        console.log(`✅ GPS API SUCCESS: ${data.count} vehicule (via proxy)`);
-        return data.vehicles;
+        const vehicles = await response.json(); // Array of vehicle objects
+        console.log(`✅ GPS API SUCCESS: ${vehicles.length} vehicule`);
+        return vehicles;
       } catch (error) {
         console.error('❌ Failed to fetch vehicle positions:', error);
         return [];

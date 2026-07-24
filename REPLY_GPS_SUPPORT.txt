@@ -1,0 +1,65 @@
+To: ionut.constantin@nexusromania.com
+Cc: cristianvladasel@rotakt.ro
+Subject: RE: Documentatie API | #0095175
+
+---
+
+Bună ziua Ionuț,
+
+Mulțumim pentru activarea rapidă a API key-ului cu IP whitelist!
+
+Am verificat documentația de pe https://www.gpstracking.ro/api, însă lipsesc câteva detalii tehnice necesare pentru integrare:
+
+**1. Endpoint exact pentru poziții curente vehicule**
+
+Documentația menționează funcția `getVehicleStatus`, DAR nu precizează:
+- URL complet? (ex: `https://www.gpstracking.ro/api/getVehicleStatus`)
+- HTTP method? (GET sau POST?)
+- Parametri necesari? (doar `api_key` sau și `device_ids`?)
+
+**2. Format request**
+
+API key-ul (`833da4fa73ec523a6814e895621f681`) se trimite:
+- Query parameter? `?api_key=...`
+- POST body JSON? `{"api_key": "..."}`
+- Header? `Authorization: Bearer ...`
+
+**3. Exemplu response JSON**
+
+Aveți un exemplu de răspuns pentru `getVehicleStatus`? Ne trebuie structura exactă:
+```json
+{
+  "vehicles": [
+    {
+      "id": ???,
+      "name": ???,
+      "lat": ???,
+      "lon": ???,
+      "speed": ???,
+      "timestamp": ???
+    }
+  ]
+}
+```
+
+**4. Rate limit clarificare**
+
+Documentația zice "1 request/30s". Dacă avem 5 vehicule:
+- Facem 1 singur request care returnează toate 5?
+- Sau trebuie 5 request-uri separate (= 5×30s = 2.5 min)?
+
+---
+
+**Use case**: Integrăm poziția vehiculelor pe o hartă Leaflet.js cu refresh automat la 30-60s pentru dispatch dinamic agenți comerciali.
+
+**URL aplicație LIVE**: https://willhurtlots.github.io/rotakt-harta/
+(Puteți vedea harta — butonul "🚗 Arată Vehicule Live" va funcționa după clarificările de mai sus)
+
+Așteptăm cu interes răspunsul!
+
+Mulțumim,
+
+**Cristian Vlădășel**
+SC ROTAKT SRL
+cristianvladasel@rotakt.ro
+0350 226 000

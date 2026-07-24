@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GPS API Direct Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #030813; color: #e2e8f0; }
+    pre { background: #1e293b; padding: 15px; border-radius: 6px; overflow-x: auto; }
+    .success { border-left: 4px solid #22c55e; }
+    .error { border-left: 4px solid #ef4444; }
+    button { background: #3d8bd8; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin: 10px 5px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>🧪 GPS API Direct Test</h1>
+  <p><strong>API Key:</strong> 833da4fa73ec523a6814e895621f681</p>
+  <p><strong>Pattern:</strong> /api?getVehicleStatus</p>
+
+  <button onclick="test1()">Test: Query Param api_key</button>
+  <button onclick="test2()">Test: POST JSON body</button>
+  <button onclick="test3()">Test: GET plain (no params)</button>
+
+  <div id="result"></div>
+
+  <script>
+    const KEY = '833da4fa73ec523a6814e895621f681';
+
+    async function test1() {
+      log('Testing: /api?getVehicleStatus with ?api_key=...');
+      try {
+        const url = `https://www.gpstracking.ro/api?getVehicleStatus&api_key=${KEY}`;
+        const response = await fetch(url);
+        const text = await response.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+
+        log(`✅ SUCCESS (${response.status})`, data, true);
+      } catch (error) {
+        log(`❌ FAILED`, error.message, false);
+      }
+    }
+
+    async function test2() {
+      log('Testing: POST /api?getVehicleStatus with JSON body');
+      try {
+        const url = 'https://www.gpstracking.ro/api?getVehicleStatus';
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: KEY })
+        });
+        const text = await response.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+
+        log(`✅ SUCCESS (${response.status})`, data, true);
+      } catch (error) {
+        log(`❌ FAILED`, error.message, false);
+      }
+    }
+
+    async function test3() {
+      log('Testing: GET /api?getVehicleStatus (no api_key param)');
+      try {
+        const url = `https://www.gpstracking.ro/api?getVehicleStatus`;
+        const response = await fetch(url);
+        const text = await response.text();
+
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+
+        log(`Response (${response.status})`, data, response.status === 200);
+      } catch (error) {
+        log(`❌ FAILED`, error.message, false);
+      }
+    }
+
+    function log(title, data, isSuccess) {
+      const div = document.createElement('pre');
+      div.className = isSuccess ? 'success' : 'error';
+      div.innerHTML = `<strong>${title}</strong>\n${typeof data === 'object' ? JSON.stringify(data, null, 2) : data}`;
+      document.getElementById('result').appendChild(div);
+    }
+
+    // Auto-run test 1
+    window.onload = () => setTimeout(test1, 1000);
+  </script>
+</body>
+</html>

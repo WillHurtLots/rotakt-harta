@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "api/gps-proxy.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/gps",
+      "destination": "/api/gps-proxy.js"
+    }
+  ]
+}

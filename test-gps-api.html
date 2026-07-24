@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GPS API Test - ROTAKT</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #030813; color: #e2e8f0; }
+    .test { background: #1e293b; padding: 12px; margin: 10px 0; border-radius: 6px; }
+    .success { border-left: 4px solid #22c55e; }
+    .error { border-left: 4px solid #ef4444; }
+    button { background: #3d8bd8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; }
+    pre { background: #0f172a; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>🧪 GPS API Test Suite</h1>
+  <p><strong>API Key:</strong> 833da4fa73ec523a6814e895621f681</p>
+
+  <button onclick="testEndpoint1()">Test #1: GET /api/getVehicleStatus</button>
+  <button onclick="testEndpoint2()">Test #2: POST /api/getVehicleStatus</button>
+  <button onclick="testEndpoint3()">Test #3: GET /api/v1/positions/latest</button>
+  <button onclick="testEndpoint4()">Test #4: GET /api/vehicles/status</button>
+
+  <div id="results"></div>
+
+  <script>
+    const API_KEY = '833da4fa73ec523a6814e895621f681';
+    const BASE_URLS = [
+      'https://www.gpstracking.ro',
+      'https://api.gpstracking.ro',
+      'https://gpstracking.ro'
+    ];
+
+    function log(title, data, isSuccess) {
+      const div = document.createElement('div');
+      div.className = 'test ' + (isSuccess ? 'success' : 'error');
+      div.innerHTML = `<strong>${title}</strong><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      document.getElementById('results').appendChild(div);
+    }
+
+    async function testEndpoint1() {
+      // Test 1: GET with query param
+      const url = `${BASE_URLS[0]}/api/getVehicleStatus?api_key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        log(`✅ Test #1 SUCCESS (${response.status})`, data, true);
+      } catch (error) {
+        log(`❌ Test #1 FAILED`, { url, error: error.message }, false);
+      }
+    }
+
+    async function testEndpoint2() {
+      // Test 2: POST with JSON body
+      const url = `${BASE_URLS[0]}/api/getVehicleStatus`;
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({ api_key: API_KEY })
+        });
+        const data = await response.json();
+        log(`✅ Test #2 SUCCESS (${response.status})`, data, true);
+      } catch (error) {
+        log(`❌ Test #2 FAILED`, { url, error: error.message }, false);
+      }
+    }
+
+    async function testEndpoint3() {
+      // Test 3: REST-style endpoint
+      const url = `${BASE_URLS[0]}/api/v1/positions/latest?api_key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        log(`✅ Test #3 SUCCESS (${response.status})`, data, true);
+      } catch (error) {
+        log(`❌ Test #3 FAILED`, { url, error: error.message }, false);
+      }
+    }
+
+    async function testEndpoint4() {
+      // Test 4: Alternative path
+      const url = `${BASE_URLS[0]}/api/vehicles/status?key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        log(`✅ Test #4 SUCCESS (${response.status})`, data, true);
+      } catch (error) {
+        log(`❌ Test #4 FAILED`, { url, error: error.message }, false);
+      }
+    }
+
+    // Auto-run Test #1 on load
+    window.onload = () => {
+      setTimeout(testEndpoint1, 1000);
+    };
+  </script>
+</body>
+</html>
