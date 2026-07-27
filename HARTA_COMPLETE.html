@@ -384,9 +384,13 @@ let data = [];
     const json = await response.json();
     data = json.allB2BGeocoded;
     console.log(`✅ Loaded ${data.length} partners from JSON`);
-    
+
     // Initialize map after data loaded
-    
+    const uniqueData = deduplicateData(data);
+    console.log(`✅ Parteneri după deduplicare: ${uniqueData.length} (eliminați ${data.length - uniqueData.length} duplicate)`);
+
+    loadFromStorage();
+    initMap(uniqueData);
   } catch (error) {
     console.error('❌ Failed to load JSON:', error);
     alert('Eroare: Nu s-au putut încărca datele partenerilor!');
