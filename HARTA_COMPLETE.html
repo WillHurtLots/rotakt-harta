@@ -3008,8 +3008,11 @@
 
     // Deduplicate partners by name (keep first occurrence)
     function deduplicateData(array) {
+      // Keep LAST occurrence (most recent) instead of first
       const seen = new Map();
-      return array.filter(item => {
+      const reversed = [...array].reverse();
+
+      const unique = reversed.filter(item => {
         const key = item.partener.toLowerCase().trim();
         if (seen.has(key)) {
           console.log(`⚠️ Duplicate removed: ${item.partener} (agent: ${item.agent})`);
@@ -3018,6 +3021,8 @@
         seen.set(key, true);
         return true;
       });
+
+      return unique.reverse(); // Restore original order
     }
 
     const uniqueData = deduplicateData(data);
