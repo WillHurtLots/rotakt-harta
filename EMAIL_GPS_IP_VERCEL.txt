@@ -1,0 +1,50 @@
+To: ionut.constantin@nexusromania.com
+Subject: URGENT - Whitelist IP Vercel pentru API Key (banned 1 day)
+
+---
+
+Bună ziua Ionuț,
+
+Am integrat API-ul GPS în aplicația noastră, DAR am întâmpinat eroare CORS policy când rulam direct din browser (GitHub Pages).
+
+Soluția implementată: Vercel Serverless Function ca proxy între browser și API GPS.
+
+**PROBLEMA**: IP-ul Vercel a fost BANAT pentru 1 zi:
+
+```
+Access denied. Please contact gpstracking.ro support to allow 35.174.19.175 to use this API Key.
+For now your IP is banned for 1 day!
+```
+
+**CERERE URGENTĂ**:
+
+Vă rugăm să adăugați IP-ul **35.174.19.175** (Vercel serverless) în whitelist pentru API key-ul nostru (833da4fa73ec523a68134e895621f681).
+
+**Mențiune**: Vercel folosește IP-uri dinamice pentru serverless functions. Pentru soluție pe termen lung, aveți 2 opțiuni:
+
+1. **Whitelistați IP range Vercel** (AWS us-east-1):
+   - 35.174.0.0/16
+   - 3.208.0.0/12
+   - 52.86.0.0/16
+
+2. **Dezactivați IP whitelist pentru acest API key** (doar autentificare via key)
+
+**Preferința noastră**: Opțiunea 2 (authentication-only, fără IP restriction) → mai flexibil pentru scale.
+
+**Alternativa**: Dacă preferați IP whitelist strict, ne puteți furniza un **IP whitelist wildcard** pentru Vercel?
+
+---
+
+**Context tehnic**:
+- URL aplicație: https://rotakt-harta.vercel.app
+- Proxy endpoint: https://rotakt-harta.vercel.app/api/gps
+- Flow: Browser → Vercel Proxy (35.174.19.175) → GPS API
+
+Așteptăm rezolvare urgentă (aplicația e LIVE, DAR GPS tracking blocat).
+
+Mulțumim!
+
+**Cristian Vlădășel**
+SC ROTAKT SRL
+cristianvladasel@rotakt.ro
+0350 226 000

@@ -353,6 +353,7 @@
         
         <div class="action-btns">
           <button class="action-btn" onclick="setStartingPoint()">📍 Set Sediu ROTAKT</button>
+          <button class="action-btn" onclick="toggleLassoMode()" id="lassoBtn">🔵 Lasso Select</button>
           <button class="action-btn" onclick="optimizeRoute()">🎯 Optimize</button>
           <button class="action-btn" onclick="clearDay()">🗑️ Clear</button>
         </div>
@@ -2959,6 +2960,9 @@
 
     let startingPoint = null; // null = no starting point, or ROTAKT_HQ object
     let unoptimizedDistance = 0; // Track distance before optimization for savings calculation
+    let lassoMode = false;
+    let lassoPolygon = null;
+    let lassoPoints = [];
 
     // Load from localStorage
     function loadFromStorage() {
@@ -3579,6 +3583,123 @@
 
       marker.bindPopup(popupContent);
       return marker;
+    }
+
+    // Lasso Selection Tool Functions
+    function toggleLassoMode() {
+      lassoMode = !lassoMode;
+      const btn = document.getElementById('lassoBtn');
+
+      if (lassoMode) {
+        btn.style.background = '#22c55e';
+        btn.textContent = '🟢 Lasso Active (click map)';
+        map.getContainer().style.cursor = 'crosshair';
+
+        // Enable map click handler
+        map.on('click', lassoMapClick);
+
+        alert('✅ Lasso mode ACTIVE\n\nDesenează poligon:\n• Click pentru fiecare punct\n• Double-click pentru a închide poligonul\n• Partenerii inside vor fi selectați automat');
+      } else {
+        // Disable lasso mode
+        btn.style.background = 'rgba(61, 139, 216, 0.2)';
+        btn.textContent = '🔵 Lasso Select';
+        map.getContainer().style.cursor = '';
+        map.off('click', lassoMapClick);
+        map.off('dblclick', lassoFinish);
+
+        // Clear polygon if exists
+        if (lassoPolygon) {
+          map.removeLayer(lassoPolygon);
+          lassoPolygon = null;
+        }
+        lassoPoints = [];
+      }
+    }
+
+    function lassoMapClick(e) {
+      // Add point to polygon
+      lassoPoints.push([e.latlng.lat, e.latlng.lng]);
+
+      // Draw temp polygon
+      if (lassoPolygon) {
+        map.removeLayer(lassoPolygon);
+      }
+
+      lassoPolygon = L.polygon(lassoPoints, {
+        color: '#22c55e',
+        weight: 2,
+        fillOpacity: 0.2
+      }).addTo(map);
+
+      // Enable double-click to finish
+      if (lassoPoints.length >= 3) {
+        map.on('dblclick', lassoFinish);
+      }
+    }
+
+    function lassoFinish(e) {
+      if (lassoPoints.length < 3) {
+        alert('⚠️ Trebuie minim 3 puncte pentru poligon!');
+        return;
+      }
+
+      // Find partners inside polygon
+      const polygon = lassoPolygon.getLatLngs()[0];
+      const selected = [];
+
+      uniqueData.forEach(partner => {
+        const point = L.latLng(partner.lat, partner.lon);
+        if (isPointInPolygon(point, polygon)) {
+          selected.push(partner);
+        }
+      });
+
+      if (selected.length === 0) {
+        alert('⚠️ Niciun partener găsit în zona selectată!');
+        toggleLassoMode(); // Exit lasso mode
+        return;
+      }
+
+      // Add selected partners to current day
+      const current = days[currentDayIndex].partners;
+      let added = 0;
+
+      selected.forEach(p => {
+        // Check if not already in route
+        if (!current.find(existing => existing.partener === p.partener)) {
+          current.push(p);
+          added++;
+        }
+      });
+
+      alert(`✅ ${added} parteneri adăugați în rută!\nTotal selectați: ${selected.length}`);
+
+      // Update UI and exit lasso mode
+      updateUI();
+      toggleLassoMode();
+
+      // Analytics
+      if (window.plausible) {
+        plausible('Lasso Selection', { props: { partners: added } });
+      }
+    }
+
+    function isPointInPolygon(point, polygon) {
+      // Ray-casting algorithm
+      let inside = false;
+      const x = point.lat, y = point.lng;
+
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+        if (intersect) inside = !inside;
+      }
+
+      return inside;
     }
 
     // Starting Point Functions
