@@ -330,6 +330,18 @@
           <span style="font-size:14px;font-weight:600;">🚗 Arată Vehicule Live (GPS)</span>
         </label>
         <div id="vehicleCount" style="font-size:12px;color:#94a3b8;margin-top:4px;margin-left:26px;">0 vehicule disponibile</div>
+
+        <!-- Vehicle Selector -->
+        <div id="vehicleSelector" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #3d8bd8;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:600;color:#e2e8f0;">Selectează Vehicule:</span>
+            <div style="display:flex;gap:8px;">
+              <button onclick="selectAllVehicles()" style="font-size:11px;padding:4px 8px;background:#3d8bd8;color:white;border:none;border-radius:4px;cursor:pointer;">Toate</button>
+              <button onclick="deselectAllVehicles()" style="font-size:11px;padding:4px 8px;background:#64748b;color:white;border:none;border-radius:4px;cursor:pointer;">Niciuna</button>
+            </div>
+          </div>
+          <div id="vehicleList" style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
       </div>
       </div>
 
@@ -3792,8 +3804,12 @@
       marker.addTo(map); // Always visible, both modes
     }
 
+    let availableVehicles = []; // Store all vehicles
+    let selectedVehicleIds = new Set(); // Track selected vehicle IDs
+
     async function toggleVehicles() {
       const checkbox = document.getElementById('showVehicles');
+      const selector = document.getElementById('vehicleSelector');
       vehiclesVisible = checkbox.checked;
 
       if (vehiclesVisible) {
@@ -3806,39 +3822,33 @@
           return;
         }
 
-        // Adaugă markers pe hartă
-        vehicles.forEach(vehicle => {
-          if (vehicle.lat && vehicle.lon) {
-            const marker = createVehicleMarker(vehicle);
-            marker.addTo(map);
-            vehicleMarkers.push(marker);
-          }
-        });
+        availableVehicles = vehicles;
+
+        // Populate vehicle selector
+        populateVehicleSelector(vehicles);
+        selector.style.display = 'block';
+
+        // Initially select all vehicles
+        selectedVehicleIds = new Set(vehicles.map(v => v.id));
+
+        // Display selected vehicles
+        updateVehicleMarkers();
 
         document.getElementById('vehicleCount').textContent = `${vehicles.length} vehicule LIVE`;
         console.log(`✅ ${vehicles.length} vehicule încărcate`);
 
         // Auto-refresh la 30s
         vehicleRefreshInterval = setInterval(async () => {
-          // Clear old markers
-          vehicleMarkers.forEach(m => map.removeLayer(m));
-          vehicleMarkers = [];
-
-          // Fetch fresh positions
           const freshVehicles = await fetchVehiclePositions();
-          freshVehicles.forEach(vehicle => {
-            if (vehicle.lat && vehicle.lon) {
-              const marker = createVehicleMarker(vehicle);
-              marker.addTo(map);
-              vehicleMarkers.push(marker);
-            }
-          });
+          availableVehicles = freshVehicles;
+          updateVehicleMarkers();
           console.log(`🔄 Vehicule refreshed: ${freshVehicles.length}`);
         }, 30000); // 30s
       } else {
         // Ascunde vehicule
         vehicleMarkers.forEach(m => map.removeLayer(m));
         vehicleMarkers = [];
+        selector.style.display = 'none';
         document.getElementById('vehicleCount').textContent = '0 vehicule disponibile';
 
         if (vehicleRefreshInterval) {
@@ -3846,6 +3856,79 @@
           vehicleRefreshInterval = null;
         }
       }
+    }
+
+    function populateVehicleSelector(vehicles) {
+      const vehicleList = document.getElementById('vehicleList');
+      vehicleList.innerHTML = '';
+
+      vehicles.forEach(vehicle => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `vehicle-${vehicle.id}`;
+        checkbox.checked = true; // All selected by default
+        checkbox.onchange = () => toggleVehicleSelection(vehicle.id);
+        checkbox.style.cssText = 'width:16px;height:16px;cursor:pointer;';
+
+        const label = document.createElement('label');
+        label.htmlFor = `vehicle-${vehicle.id}`;
+        label.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:6px;border-radius:4px;background:rgba(255,255,255,0.05);';
+        label.innerHTML = `<span>🚗 <strong>${vehicle.name || vehicle.license_plate}</strong> ${vehicle.isStopped ? '(Oprit)' : '(În mișcare)'}</span>`;
+
+        const container = document.createElement('div');
+        container.appendChild(checkbox);
+        container.appendChild(label);
+        container.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+        vehicleList.appendChild(container);
+      });
+    }
+
+    function toggleVehicleSelection(vehicleId) {
+      if (selectedVehicleIds.has(vehicleId)) {
+        selectedVehicleIds.delete(vehicleId);
+      } else {
+        selectedVehicleIds.add(vehicleId);
+      }
+      updateVehicleMarkers();
+    }
+
+    function selectAllVehicles() {
+      selectedVehicleIds = new Set(availableVehicles.map(v => v.id));
+      availableVehicles.forEach(v => {
+        const checkbox = document.getElementById(`vehicle-${v.id}`);
+        if (checkbox) checkbox.checked = true;
+      });
+      updateVehicleMarkers();
+    }
+
+    function deselectAllVehicles() {
+      selectedVehicleIds.clear();
+      availableVehicles.forEach(v => {
+        const checkbox = document.getElementById(`vehicle-${v.id}`);
+        if (checkbox) checkbox.checked = false;
+      });
+      updateVehicleMarkers();
+    }
+
+    function updateVehicleMarkers() {
+      // Clear all markers
+      vehicleMarkers.forEach(m => map.removeLayer(m));
+      vehicleMarkers = [];
+
+      // Add only selected vehicles
+      availableVehicles.forEach(vehicle => {
+        if (selectedVehicleIds.has(vehicle.id) && vehicle.lat && vehicle.lon) {
+          const marker = createVehicleMarker(vehicle);
+          marker.addTo(map);
+          vehicleMarkers.push(marker);
+        }
+      });
+
+      // Update count
+      const selectedCount = selectedVehicleIds.size;
+      const totalCount = availableVehicles.length;
+      document.getElementById('vehicleCount').textContent = `${selectedCount}/${totalCount} vehicule LIVE`;
     }
 
     function initMap(b2bData) {
