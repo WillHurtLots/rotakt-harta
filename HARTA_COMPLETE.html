@@ -3557,10 +3557,10 @@
         iconSize: [32, 32]
       });
 
-      const marker = L.marker([vehicle.lat, vehicle.lon], { icon });
+      const marker = L.marker([parseFloat(vehicle.lat), parseFloat(vehicle.lon)], { icon });
 
       // Popup cu detalii vehicul (Nexus GPS API structure)
-      const speed = vehicle.speed || 0;
+      const speed = parseFloat(vehicle.speed) || 0;
       const status = vehicle.isStopped ? 'Oprit' : (speed > 5 ? 'În mișcare' : 'Idle');
       const plate = vehicle.license_plate || '-';
       const driver = vehicle.driverName || 'N/A';
