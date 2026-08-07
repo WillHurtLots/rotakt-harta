@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROTAKT Map - Modern UI Mockup</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+      background: #0a0f1e;
+      color: #e2e8f0;
+      overflow: hidden;
+    }
+
+    /* MODERN GLASSMORPHISM SIDEBAR */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 420px;
+      height: 100vh;
+      background: linear-gradient(135deg,
+        rgba(3, 8, 19, 0.98) 0%,
+        rgba(15, 23, 42, 0.95) 50%,
+        rgba(30, 41, 59, 0.92) 100%
+      );
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-right: 1px solid rgba(61, 139, 216, 0.15);
+      box-shadow:
+        4px 0 32px rgba(0, 0, 0, 0.4),
+        inset -1px 0 0 rgba(61, 139, 216, 0.1);
+      padding: 32px 24px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #3d8bd8 0%, #2563eb 100%);
+      border-radius: 3px;
+    }
+
+    /* HEADER GRADIENT */
+    .header {
+      margin-bottom: 32px;
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(61, 139, 216, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+      border: 1px solid rgba(61, 139, 216, 0.2);
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(61, 139, 216, 0.1);
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #3d8bd8 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    /* MODERN STAT BOX */
+    .stat-box {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
+      border: 1px solid rgba(61, 139, 216, 0.25);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .stat-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(61, 139, 216, 0.15);
+      border-color: rgba(61, 139, 216, 0.4);
+    }
+
+    .stat-number {
+      font-size: 36px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #3d8bd8 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* VEHICLE LIST MODERN */
+    .vehicle-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(61, 139, 216, 0.15);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .vehicle-item:hover {
+      background: rgba(61, 139, 216, 0.12);
+      border-color: rgba(61, 139, 216, 0.35);
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px rgba(61, 139, 216, 0.15);
+    }
+
+    /* VEHICLE COLOR DOT (unique per vehicle) */
+    .vehicle-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* VEHICLE ICON */
+    .vehicle-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    /* VEHICLE INFO */
+    .vehicle-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .vehicle-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .vehicle-driver {
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* STATUS BADGE */
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .status-moving {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.15) 100%);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .status-stopped {
+      background: linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(100, 116, 139, 0.15) 100%);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .status-low-battery {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.15) 100%);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* ASSIGN DRIVER BUTTON */
+    .assign-driver-btn {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, rgba(61, 139, 216, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%);
+      border: 1px solid rgba(61, 139, 216, 0.3);
+      border-radius: 8px;
+      color: #3d8bd8;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      white-space: nowrap;
+    }
+
+    .assign-driver-btn:hover {
+      background: linear-gradient(135deg, rgba(61, 139, 216, 0.35) 0%, rgba(37, 99, 235, 0.25) 100%);
+      border-color: rgba(61, 139, 216, 0.5);
+      transform: scale(1.05);
+    }
+
+    /* DRIVER ASSIGNMENT MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      width: 90%;
+      max-width: 520px;
+      background: linear-gradient(135deg,
+        rgba(15, 23, 42, 0.98) 0%,
+        rgba(30, 41, 59, 0.95) 100%
+      );
+      border: 1px solid rgba(61, 139, 216, 0.25);
+      border-radius: 20px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(61, 139, 216, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%);
+      border-bottom: 1px solid rgba(61, 139, 216, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+    }
+
+    .modal-close:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(61, 139, 216, 0.25);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 14px;
+      transition: all 0.25s;
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: #3d8bd8;
+      box-shadow: 0 0 0 3px rgba(61, 139, 216, 0.15);
+    }
+
+    .modal-footer {
+      padding: 20px 24px;
+      background: rgba(15, 23, 42, 0.6);
+      border-top: 1px solid rgba(61, 139, 216, 0.15);
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3d8bd8 0%, #2563eb 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(61, 139, 216, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(61, 139, 216, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(100, 116, 139, 0.2);
+      color: #cbd5e1;
+      border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(100, 116, 139, 0.3);
+    }
+
+    /* MAP CONTAINER */
+    #map {
+      position: fixed;
+      left: 420px;
+      top: 0;
+      width: calc(100% - 420px);
+      height: 100vh;
+      z-index: 0;
+    }
+
+    /* 17 UNIQUE COLORS for vehicles */
+    .color-1 { background: #ef4444; } /* Red */
+    .color-2 { background: #f59e0b; } /* Amber */
+    .color-3 { background: #10b981; } /* Emerald */
+    .color-4 { background: #3b82f6; } /* Blue */
+    .color-5 { background: #8b5cf6; } /* Violet */
+    .color-6 { background: #ec4899; } /* Pink */
+    .color-7 { background: #14b8a6; } /* Teal */
+    .color-8 { background: #f97316; } /* Orange */
+    .color-9 { background: #84cc16; } /* Lime */
+    .color-10 { background: #06b6d4; } /* Cyan */
+    .color-11 { background: #a855f7; } /* Purple */
+    .color-12 { background: #f43f5e; } /* Rose */
+    .color-13 { background: #eab308; } /* Yellow */
+    .color-14 { background: #22c55e; } /* Green */
+    .color-15 { background: #6366f1; } /* Indigo */
+    .color-16 { background: #d946ef; } /* Fuchsia */
+    .color-17 { background: #0ea5e9; } /* Sky */
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="header">
+      <h1>🗺️ ROTAKT Map</h1>
+      <p>Modern UI · Fleet Management</p>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-number">17</div>
+      <div class="stat-label">Vehicule Active</div>
+    </div>
+
+    <!-- VEHICLE LIST -->
+    <div id="vehicleList">
+      <!-- Populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+  <!-- DRIVER ASSIGNMENT MODAL -->
+  <div class="modal-overlay" id="driverModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Atribuie Șofer</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Vehicul</label>
+          <input type="text" class="form-input" id="modalVehicleName" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Șofer Actual</label>
+          <input type="text" class="form-input" id="modalCurrentDriver" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Șofer Nou</label>
+          <select class="form-select" id="modalNewDriver">
+            <option value="">-- Selectează șofer --</option>
+            <option value="Ion Popescu">Ion Popescu</option>
+            <option value="Maria Ionescu">Maria Ionescu</option>
+            <option value="Andrei Georgescu">Andrei Georgescu</option>
+            <option value="Elena Dumitrescu">Elena Dumitrescu</option>
+            <option value="Mihai Stoica">Mihai Stoica</option>
+            <option value="Cristina Popa">Cristina Popa</option>
+            <option value="Neasignat">-- Neasignat --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Telefon Șofer</label>
+          <input type="tel" class="form-input" id="modalDriverPhone" placeholder="+40 7XX XXX XXX">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Anulează</button>
+        <button class="btn btn-primary" onclick="saveDriver()">Salvează</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // MOCK VEHICLE DATA (17 vehicles with different states)
+    const vehicles = [
+      { id: '1', name: 'VL01RTK', driver: 'Ion Popescu', phone: '+40721123456', lat: 45.101, lon: 24.365, speed: 0, voltage: 12.5, status: 'stopped' },
+      { id: '2', name: 'VL12RTK', driver: 'Maria Ionescu', phone: '+40722234567', lat: 45.108, lon: 24.381, speed: 45.5, voltage: 13.2, status: 'moving' },
+      { id: '3', name: 'VL13RTK', driver: 'Andrei Georgescu', phone: '+40723345678', lat: 46.555, lon: 26.924, speed: 72.0, voltage: 12.9, status: 'moving' },
+      { id: '4', name: 'VL15RTK', driver: '', phone: '', lat: 45.102, lon: 24.364, speed: 0, voltage: 12.7, status: 'stopped' },
+      { id: '5', name: 'VL16RTK', driver: 'Elena Dumitrescu', phone: '+40724456789', lat: 45.193, lon: 24.198, speed: 0, voltage: 11.2, status: 'low-battery' },
+      { id: '6', name: 'VL17RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 12.6, status: 'stopped' },
+      { id: '7', name: 'VL20RTK', driver: 'Mihai Stoica', phone: '+40725567890', lat: 45.119, lon: 24.384, speed: 0, voltage: 13.0, status: 'stopped' },
+      { id: '8', name: 'VL21RTK', driver: '', phone: '', lat: 45.069, lon: 24.336, speed: 0, voltage: 13.3, status: 'stopped' },
+      { id: '9', name: 'VL22RTK', driver: 'Cristina Popa', phone: '+40726678901', lat: 45.080, lon: 24.352, speed: 32.5, voltage: 14.1, status: 'moving' },
+      { id: '10', name: 'VL25RTK', driver: '', phone: '', lat: 45.108, lon: 24.380, speed: 0, voltage: 12.6, status: 'stopped' },
+      { id: '11', name: 'VL27RTK', driver: '', phone: '', lat: 45.069, lon: 24.337, speed: 0, voltage: 13.0, status: 'stopped' },
+      { id: '12', name: 'VL30RTK', driver: '', phone: '', lat: 45.093, lon: 24.378, speed: 0, voltage: 13.7, status: 'stopped' },
+      { id: '13', name: 'VL67RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 13.1, status: 'stopped' },
+      { id: '14', name: 'VL03RTK', driver: '', phone: '', lat: 45.068, lon: 24.338, speed: 0, voltage: 9.4, status: 'low-battery' },
+      { id: '15', name: 'VL07RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 12.3, status: 'stopped' },
+      { id: '16', name: 'VL11RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 12.7, status: 'stopped' },
+      { id: '17', name: 'VL13RTK - Fosta', driver: 'Nastasescu Adi', phone: '', lat: 44.946, lon: 23.140, speed: 0, voltage: 12.0, status: 'stopped' }
+    ];
+
+    let currentVehicleId = null;
+
+    // INITIALIZE MAP
+    const map = L.map('map').setView([45.5, 24.8], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    // RENDER VEHICLE LIST
+    function renderVehicleList() {
+      const listHTML = vehicles.map((v, index) => {
+        const colorClass = `color-${index + 1}`;
+        const statusClass = `status-${v.status}`;
+        const statusText = v.status === 'moving' ? 'În mișcare' : v.status === 'low-battery' ? 'Baterie Scăzută' : 'Oprit';
+        const driverText = v.driver || 'Neasignat';
+        const icon = v.status === 'moving' ? '🚗' : v.status === 'low-battery' ? '🔋' : '🅿️';
+
+        return `
+          <div class="vehicle-item" onclick="openDriverModal('${v.id}')">
+            <div class="vehicle-color ${colorClass}"></div>
+            <div class="vehicle-icon">${icon}</div>
+            <div class="vehicle-info">
+              <div class="vehicle-name">${v.name}</div>
+              <div class="vehicle-driver">
+                👤 ${driverText}
+              </div>
+            </div>
+            <div class="status-badge ${statusClass}">${statusText}</div>
+            <button class="assign-driver-btn" onclick="event.stopPropagation(); openDriverModal('${v.id}')">
+              Atribuie
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('vehicleList').innerHTML = listHTML;
+    }
+
+    // ADD VEHICLE MARKERS TO MAP with unique colors
+    vehicles.forEach((v, index) => {
+      const color = getComputedStyle(document.documentElement).getPropertyValue(`--color-${index + 1}`) || ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#f43f5e','#eab308','#22c55e','#6366f1','#d946ef','#0ea5e9'][index];
+
+      const icon = L.divIcon({
+        html: `<div style="background:${['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#f43f5e','#eab308','#22c55e','#6366f1','#d946ef','#0ea5e9'][index]};color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);">${v.status === 'moving' ? '🚗' : '🅿️'}</div>`,
+        className: '',
+        iconSize: [36, 36]
+      });
+
+      const marker = L.marker([v.lat, v.lon], { icon });
+      marker.bindPopup(`
+        <div style="font-family: 'IBM Plex Sans', sans-serif;">
+          <h3 style="margin: 0 0 8px 0; color: ${['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#f43f5e','#eab308','#22c55e','#6366f1','#d946ef','#0ea5e9'][index]};">${v.name}</h3>
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>Șofer:</strong> ${v.driver || 'Neasignat'}
+          </div>
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>Status:</strong> ${v.status === 'moving' ? `În mișcare (${v.speed} km/h)` : v.status === 'low-battery' ? `Oprit (Baterie: ${v.voltage}V)` : 'Oprit'}
+          </div>
+        </div>
+      `);
+      marker.addTo(map);
+    });
+
+    // MODAL FUNCTIONS
+    function openDriverModal(vehicleId) {
+      currentVehicleId = vehicleId;
+      const vehicle = vehicles.find(v => v.id === vehicleId);
+
+      document.getElementById('modalVehicleName').value = vehicle.name;
+      document.getElementById('modalCurrentDriver').value = vehicle.driver || 'Neasignat';
+      document.getElementById('modalNewDriver').value = '';
+      document.getElementById('modalDriverPhone').value = vehicle.phone || '';
+
+      document.getElementById('driverModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('driverModal').classList.remove('active');
+      currentVehicleId = null;
+    }
+
+    function saveDriver() {
+      const vehicle = vehicles.find(v => v.id === currentVehicleId);
+      const newDriver = document.getElementById('modalNewDriver').value;
+      const newPhone = document.getElementById('modalDriverPhone').value;
+
+      if (!newDriver) {
+        alert('Selectează un șofer!');
+        return;
+      }
+
+      vehicle.driver = newDriver === 'Neasignat' ? '' : newDriver;
+      vehicle.phone = newPhone;
+
+      renderVehicleList();
+      closeModal();
+
+      alert(`✅ Șofer ${newDriver} atribuit la ${vehicle.name}`);
+    }
+
+    // INITIALIZE
+    renderVehicleList();
+  </script>
+</body>
+</html>
