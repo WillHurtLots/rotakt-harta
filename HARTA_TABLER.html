@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROTAKT Fleet Manager</title>
+
+  <!-- Tabler CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    body {
+      background: #1e293b;
+      min-height: 100vh;
+    }
+
+    .page {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-wrapper {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar-left {
+      width: 420px;
+      background: #0f172a;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+
+    /* Vehicle color dots */
+    .vehicle-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    /* 17 unique colors */
+    .color-1 { background: #ef4444; }
+    .color-2 { background: #f59e0b; }
+    .color-3 { background: #10b981; }
+    .color-4 { background: #3b82f6; }
+    .color-5 { background: #8b5cf6; }
+    .color-6 { background: #ec4899; }
+    .color-7 { background: #14b8a6; }
+    .color-8 { background: #f97316; }
+    .color-9 { background: #84cc16; }
+    .color-10 { background: #06b6d4; }
+    .color-11 { background: #a855f7; }
+    .color-12 { background: #f43f5e; }
+    .color-13 { background: #eab308; }
+    .color-14 { background: #22c55e; }
+    .color-15 { background: #6366f1; }
+    .color-16 { background: #d946ef; }
+    .color-17 { background: #0ea5e9; }
+
+    .vehicle-card {
+      cursor: pointer;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .vehicle-card:hover {
+      border-left-color: var(--tblr-primary);
+      background: rgba(32, 107, 196, 0.05);
+      transform: translateX(2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- HEADER -->
+    <header class="navbar navbar-expand-md navbar-dark d-print-none" style="background: #0f172a; border-bottom: 1px solid rgba(255,255,255,0.1);">
+      <div class="container-fluid">
+        <h1 class="navbar-brand">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 20l-3 -3h-2a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3h10a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-2l-3 3" /><path d="M8 9l8 0" /><path d="M8 13l6 0" /></svg>
+          ROTAKT Fleet Manager
+        </h1>
+        <div class="navbar-nav flex-row order-md-last">
+          <div class="nav-item">
+            <span class="badge bg-green-lt me-2">17 Vehicule Active</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-wrapper">
+      <!-- SIDEBAR -->
+      <aside class="sidebar-left">
+        <!-- STATS CARD -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="row">
+              <div class="col">
+                <div class="text-muted small">Total Vehicule</div>
+                <div class="h2 mb-0">17</div>
+              </div>
+              <div class="col-auto">
+                <div class="avatar avatar-lg bg-primary-lt">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /><path d="M5 17h-2v-6l2 -5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0h-6m-6 -6h15m-6 0v-5" /></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GPS TOGGLE -->
+        <div class="card mb-3 bg-primary-lt">
+          <div class="card-body">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="gpsToggle" checked>
+              <label class="form-check-label" for="gpsToggle">
+                <strong>GPS Tracking Live</strong>
+              </label>
+            </div>
+            <small class="text-muted">Auto-refresh la 30s</small>
+          </div>
+        </div>
+
+        <!-- VEHICLE LIST -->
+        <h3 class="mb-3">Flota Activă</h3>
+        <div id="vehicleList">
+          <!-- Populated by JavaScript -->
+        </div>
+      </aside>
+
+      <!-- MAP -->
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <!-- DRIVER ASSIGNMENT MODAL -->
+  <div class="modal modal-blur fade" id="driverModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Atribuie Șofer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Vehicul</label>
+            <input type="text" class="form-control" id="modalVehicleName" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Șofer Actual</label>
+            <input type="text" class="form-control" id="modalCurrentDriver" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Șofer Nou</label>
+            <select class="form-select" id="modalNewDriver" required>
+              <option value="">-- Selectează șofer --</option>
+              <option value="Ion Popescu">Ion Popescu</option>
+              <option value="Maria Ionescu">Maria Ionescu</option>
+              <option value="Andrei Georgescu">Andrei Georgescu</option>
+              <option value="Elena Dumitrescu">Elena Dumitrescu</option>
+              <option value="Mihai Stoica">Mihai Stoica</option>
+              <option value="Cristina Popa">Cristina Popa</option>
+              <option value="">-- Neasignat --</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Telefon Șofer</label>
+            <input type="tel" class="form-control" id="modalDriverPhone" placeholder="+40 7XX XXX XXX">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" data-bs-dismiss="modal">Anulează</button>
+          <button type="button" class="btn btn-primary" onclick="saveDriver()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="9 11 12 14 20 6" /><path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9" /></svg>
+            Salvează
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // MOCK VEHICLE DATA
+    const vehicles = [
+      { id: '1', name: 'VL01RTK', driver: 'Ion Popescu', phone: '+40721123456', lat: 45.101, lon: 24.365, speed: 0, voltage: 12.5, status: 'stopped' },
+      { id: '2', name: 'VL12RTK', driver: 'Maria Ionescu', phone: '+40722234567', lat: 45.108, lon: 24.381, speed: 45.5, voltage: 13.2, status: 'moving' },
+      { id: '3', name: 'VL13RTK', driver: 'Andrei Georgescu', phone: '+40723345678', lat: 46.555, lon: 26.924, speed: 72.0, voltage: 12.9, status: 'moving' },
+      { id: '4', name: 'VL15RTK', driver: '', phone: '', lat: 45.102, lon: 24.364, speed: 0, voltage: 12.7, status: 'stopped' },
+      { id: '5', name: 'VL16RTK', driver: 'Elena Dumitrescu', phone: '+40724456789', lat: 45.193, lon: 24.198, speed: 0, voltage: 11.2, status: 'low-battery' },
+      { id: '6', name: 'VL17RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 12.6, status: 'stopped' },
+      { id: '7', name: 'VL20RTK', driver: 'Mihai Stoica', phone: '+40725567890', lat: 45.119, lon: 24.384, speed: 0, voltage: 13.0, status: 'stopped' },
+      { id: '8', name: 'VL21RTK', driver: '', phone: '', lat: 45.069, lon: 24.336, speed: 0, voltage: 13.3, status: 'stopped' },
+      { id: '9', name: 'VL22RTK', driver: 'Cristina Popa', phone: '+40726678901', lat: 45.080, lon: 24.352, speed: 32.5, voltage: 14.1, status: 'moving' },
+      { id: '10', name: 'VL25RTK', driver: '', phone: '', lat: 45.108, lon: 24.380, speed: 0, voltage: 12.6, status: 'stopped' },
+      { id: '11', name: 'VL27RTK', driver: '', phone: '', lat: 45.069, lon: 24.337, speed: 0, voltage: 13.0, status: 'stopped' },
+      { id: '12', name: 'VL30RTK', driver: '', phone: '', lat: 45.093, lon: 24.378, speed: 0, voltage: 13.7, status: 'stopped' },
+      { id: '13', name: 'VL67RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 13.1, status: 'stopped' },
+      { id: '14', name: 'VL03RTK', driver: '', phone: '', lat: 45.068, lon: 24.338, speed: 0, voltage: 9.4, status: 'low-battery' },
+      { id: '15', name: 'VL07RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 12.3, status: 'stopped' },
+      { id: '16', name: 'VL11RTK', driver: '', phone: '', lat: 45.068, lon: 24.337, speed: 0, voltage: 12.7, status: 'stopped' },
+      { id: '17', name: 'VL13RTK - Fosta', driver: 'Nastasescu Adi', phone: '', lat: 44.946, lon: 23.140, speed: 0, voltage: 12.0, status: 'stopped' }
+    ];
+
+    let currentVehicleId = null;
+    let driverModal = null;
+
+    // INITIALIZE MAP
+    const map = L.map('map').setView([45.5, 24.8], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map);
+
+    // RENDER VEHICLE LIST
+    function renderVehicleList() {
+      const colors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#f43f5e','#eab308','#22c55e','#6366f1','#d946ef','#0ea5e9'];
+
+      const listHTML = vehicles.map((v, index) => {
+        const colorClass = `color-${index + 1}`;
+        const statusBadge = v.status === 'moving'
+          ? '<span class="badge bg-green">În mișcare</span>'
+          : v.status === 'low-battery'
+          ? '<span class="badge bg-red">Baterie scăzută</span>'
+          : '<span class="badge bg-secondary">Oprit</span>';
+
+        const driverText = v.driver || '<span class="text-muted">Neasignat</span>';
+
+        return `
+          <div class="card vehicle-card mb-2" onclick="openDriverModal('${v.id}')">
+            <div class="card-body py-2">
+              <div class="d-flex align-items-center">
+                <span class="vehicle-dot ${colorClass}"></span>
+                <div class="flex-fill">
+                  <strong>${v.name}</strong>
+                  <div class="small text-muted">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="7" r="4" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg>
+                    ${driverText}
+                  </div>
+                </div>
+                ${statusBadge}
+                <button class="btn btn-sm btn-icon ms-2" onclick="event.stopPropagation(); openDriverModal('${v.id}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('vehicleList').innerHTML = listHTML;
+    }
+
+    // ADD VEHICLE MARKERS
+    const colors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16','#06b6d4','#a855f7','#f43f5e','#eab308','#22c55e','#6366f1','#d946ef','#0ea5e9'];
+    vehicles.forEach((v, index) => {
+      const icon = L.divIcon({
+        html: `<div style="background:${colors[index]};color:white;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;font-family:monospace;border:3px solid white;box-shadow:0 4px 12px rgba(0,0,0,0.3);">${v.status === 'moving' ? 'M' : 'P'}</div>`,
+        className: '',
+        iconSize: [36, 36]
+      });
+
+      const marker = L.marker([v.lat, v.lon], { icon });
+      marker.bindPopup(`
+        <div>
+          <h6 style="color: ${colors[index]}; margin-bottom: 8px;">${v.name}</h6>
+          <div style="font-size: 13px; margin-bottom: 4px;">
+            <strong>Șofer:</strong> ${v.driver || 'Neasignat'}
+          </div>
+          <div style="font-size: 13px; margin-bottom: 4px;">
+            <strong>Status:</strong> ${v.status === 'moving' ? `În mișcare (${v.speed} km/h)` : v.status === 'low-battery' ? `Oprit (${v.voltage}V)` : 'Oprit'}
+          </div>
+        </div>
+      `);
+      marker.addTo(map);
+    });
+
+    // MODAL FUNCTIONS
+    function openDriverModal(vehicleId) {
+      currentVehicleId = vehicleId;
+      const vehicle = vehicles.find(v => v.id === vehicleId);
+
+      document.getElementById('modalVehicleName').value = vehicle.name;
+      document.getElementById('modalCurrentDriver').value = vehicle.driver || 'Neasignat';
+      document.getElementById('modalNewDriver').value = '';
+      document.getElementById('modalDriverPhone').value = vehicle.phone || '';
+
+      if (!driverModal) {
+        driverModal = new bootstrap.Modal(document.getElementById('driverModal'));
+      }
+      driverModal.show();
+    }
+
+    function saveDriver() {
+      const vehicle = vehicles.find(v => v.id === currentVehicleId);
+      const newDriver = document.getElementById('modalNewDriver').value;
+      const newPhone = document.getElementById('modalDriverPhone').value;
+
+      if (!newDriver) {
+        alert('Selectează un șofer!');
+        return;
+      }
+
+      vehicle.driver = newDriver === '' ? '' : newDriver;
+      vehicle.phone = newPhone;
+
+      renderVehicleList();
+      driverModal.hide();
+
+      // Tabler toast notification
+      const toast = document.createElement('div');
+      toast.className = 'toast show';
+      toast.innerHTML = `
+        <div class="toast-header">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-green" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><path d="M9 12l2 2l4 -4" /></svg>
+          <strong class="me-auto ms-2">Succes</strong>
+          <button type="button" class="ms-2 btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+        <div class="toast-body">
+          Șofer ${newDriver} atribuit la ${vehicle.name}
+        </div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // INITIALIZE
+    renderVehicleList();
+  </script>
+</body>
+</html>
