@@ -2950,6 +2950,8 @@
     let vehicleMarkers = [];
     let vehiclesVisible = false;
     let vehicleRefreshInterval = null;
+    let availableVehicles = []; // Store all vehicles for selector
+    let selectedVehicleIds = new Set(); // Track selected vehicle IDs
 
     // GPS API Configuration
     const GPS_API_KEY = '833da4fa73ec523a68134e895621f681';
@@ -3803,9 +3805,6 @@
       marker.bindPopup(popupContent);
       marker.addTo(map); // Always visible, both modes
     }
-
-    let availableVehicles = []; // Store all vehicles
-    let selectedVehicleIds = new Set(); // Track selected vehicle IDs
 
     async function toggleVehicles() {
       const checkbox = document.getElementById('showVehicles');
