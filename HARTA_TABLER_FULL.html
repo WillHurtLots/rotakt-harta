@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ROTAKT Fleet Manager</title>
+
+  <!-- Tabler CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <style>
+    body {
+      background: #1e293b;
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .page {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-wrapper {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar-left {
+      width: 420px;
+      background: #0f172a;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    #map {
+      flex: 1;
+      height: 100%;
+    }
+
+    /* Vehicle color dots - 17 unique colors */
+    .vehicle-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+    }
+    .color-1 { background: #ef4444; }
+    .color-2 { background: #f59e0b; }
+    .color-3 { background: #10b981; }
+    .color-4 { background: #3b82f6; }
+    .color-5 { background: #8b5cf6; }
+    .color-6 { background: #ec4899; }
+    .color-7 { background: #06b6d4; }
+    .color-8 { background: #84cc16; }
+    .color-9 { background: #f97316; }
+    .color-10 { background: #14b8a6; }
+    .color-11 { background: #6366f1; }
+    .color-12 { background: #a855f7; }
+    .color-13 { background: #eab308; }
+    .color-14 { background: #22c55e; }
+    .color-15 { background: #0ea5e9; }
+    .color-16 { background: #d946ef; }
+    .color-17 { background: #fb923c; }
+
+    .vehicle-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vehicle-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateX(4px);
+    }
+
+    .vehicle-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .vehicle-name {
+      font-weight: 600;
+      color: #e2e8f0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vehicle-meta {
+      font-size: 11px;
+      color: #64748b;
+      display: flex;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    /* Mode toggle buttons */
+    .mode-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.03);
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+      text-align: center;
+      border-radius: 6px;
+    }
+
+    .mode-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .mode-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
+    .mode-section {
+      display: none;
+    }
+
+    .mode-section.active {
+      display: block;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #3b82f6;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Action buttons */
+    .action-btn {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    /* Selected partners list */
+    .selected-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+
+    .selected-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .remove-btn {
+      background: #ef4444;
+      border: none;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .remove-btn:hover {
+      background: #dc2626;
+    }
+
+    /* Vehicle selector */
+    .vehicle-selector {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .vehicle-selector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .vehicle-selector-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .vehicle-select-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .select-btn {
+      font-size: 11px;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .select-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .vehicle-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .vehicle-checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    .vehicle-checkbox-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .vehicle-checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .vehicle-checkbox-label {
+      flex: 1;
+      font-size: 12px;
+      color: #cbd5e1;
+      cursor: pointer;
+    }
+
+    /* Scrollbar styling */
+    .sidebar-left::-webkit-scrollbar,
+    .vehicle-list::-webkit-scrollbar,
+    .selected-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar-left::-webkit-scrollbar-track,
+    .vehicle-list::-webkit-scrollbar-track,
+    .selected-list::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 3px;
+    }
+
+    .sidebar-left::-webkit-scrollbar-thumb,
+    .vehicle-list::-webkit-scrollbar-thumb,
+    .selected-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .sidebar-left::-webkit-scrollbar-thumb:hover,
+    .vehicle-list::-webkit-scrollbar-thumb:hover,
+    .selected-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Section headers */
+    .section-header {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 20px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <header class="navbar navbar-dark" style="background: #0f172a; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+      <div class="container-fluid">
+        <h1 class="navbar-brand">
+          <i class="ti ti-map-2"></i>
+          ROTAKT Fleet Manager
+        </h1>
+        <div class="navbar-nav">
+          <span class="badge bg-blue-lt" id="totalVehicles">0 vehicule</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="page-wrapper">
+      <!-- Sidebar -->
+      <aside class="sidebar-left">
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value" id="totalPoints">0</span>
+            <span class="stat-label">Parteneri B2B</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="vehicleCount">0</span>
+            <span class="stat-label">Vehicule LIVE</span>
+          </div>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px;">
+          <button class="mode-btn active" id="browseModeBtn" onclick="switchMode('browse')">
+            <i class="ti ti-map-pin"></i> Browse All
+          </button>
+          <button class="mode-btn" id="planModeBtn" onclick="switchMode('plan')">
+            <i class="ti ti-route"></i> Plan Routes
+          </button>
+        </div>
+
+        <!-- Browse Mode Section -->
+        <div id="browseMode" class="mode-section active">
+          <div class="section-header">GPS Tracking</div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #cbd5e1; font-size: 13px;">
+              <input type="checkbox" id="showVehicles" onchange="toggleVehicles()" style="width: 18px; height: 18px; cursor: pointer;">
+              <span>Arată Vehicule Live GPS</span>
+            </label>
+          </div>
+
+          <!-- Vehicle Selector -->
+          <div id="vehicleSelector" class="vehicle-selector" style="display: none;">
+            <div class="vehicle-selector-header">
+              <span class="vehicle-selector-title">Selectează Vehicule</span>
+              <div class="vehicle-select-btns">
+                <button class="select-btn" onclick="selectAllVehicles()">Toate</button>
+                <button class="select-btn" onclick="deselectAllVehicles()">Niciuna</button>
+              </div>
+            </div>
+            <div id="vehicleList" class="vehicle-list"></div>
+          </div>
+        </div>
+
+        <!-- Plan Mode Section -->
+        <div id="planMode" class="mode-section">
+          <div class="section-header">Rută Curentă</div>
+
+          <button class="action-btn btn-primary" onclick="optimizeRoute()">
+            <i class="ti ti-sort-ascending"></i> Optimize Route
+          </button>
+
+          <button class="action-btn btn-secondary" onclick="setStartingPoint()">
+            <i class="ti ti-home"></i> Toggle ROTAKT HQ Start
+          </button>
+
+          <button class="action-btn btn-secondary" onclick="toggleLassoMode()">
+            <i class="ti ti-lasso"></i> Lasso Select
+          </button>
+
+          <button class="action-btn btn-danger" onclick="clearDay()">
+            <i class="ti ti-trash"></i> Clear Day
+          </button>
+
+          <div class="selected-list" id="selectedList"></div>
+
+          <div class="section-header">Multi-Day Planning</div>
+
+          <button class="action-btn btn-primary" onclick="newDay()">
+            <i class="ti ti-plus"></i> New Day
+          </button>
+
+          <div style="display: flex; gap: 8px; margin-top: 8px;">
+            <button class="action-btn btn-secondary" onclick="prevDay()" style="flex: 1;">
+              <i class="ti ti-arrow-left"></i> Prev
+            </button>
+            <button class="action-btn btn-secondary" onclick="nextDay()" style="flex: 1;">
+              <i class="ti ti-arrow-right"></i> Next
+            </button>
+          </div>
+
+          <div style="text-align: center; margin-top: 12px;">
+            <span style="color: #94a3b8; font-size: 13px;">Day <span id="currentDay">1</span> of <span id="totalDays">1</span></span>
+          </div>
+
+          <button class="action-btn btn-primary" onclick="toggleItinerary()" style="margin-top: 16px;">
+            <i class="ti ti-list"></i> Show Itinerary
+          </button>
+        </div>
+      </aside>
+
+      <!-- Map -->
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <!-- Tabler JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <script>
+    // Partner Data (embedded)
+    const data = [
+      // Data will be loaded from b2b-all-geocoded.json via fetch
+    ];
+
+    // State Management
+    let currentMode = 'browse';
+    let map, browseMarkers, routeLayer;
+    let days = [{ partners: [], distance: 0, color: '#22c55e' }];
+    let currentDayIndex = 0;
+    const dayColors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
+    let planMarkers = [];
+    let itineraryVisible = false;
+    let vehicleMarkers = [];
+    let vehiclesVisible = false;
+    let vehicleRefreshInterval = null;
+    let availableVehicles = [];
+    let selectedVehicleIds = new Set();
+
+    // GPS API Configuration
+    const GPS_API_KEY = '833da4fa73ec523a68134e895621f681';
+
+    // ROTAKT HQ
+    const ROTAKT_HQ = {
+      partener: 'ROTAKT SRL (Sediu Central)',
+      zona: 'HQ',
+      agent: 'OFFICE',
+      lat: 45.0684524,
+      lon: 24.3371769,
+      adresa: 'Strada Depozitelor 28, 240426 Râmnicu Vâlcea',
+      localitate: 'Râmnicu Vâlcea',
+      ca_total: 0,
+      nr_livrari: 0,
+      confidence: 'exact_address',
+      status: 'HQ'
+    };
+
+    let startingPoint = null;
+    let unoptimizedDistance = 0;
+    let lassoMode = false;
+    let lassoPolygon = null;
+    let lassoPoints = [];
+
+    // Load B2B data
+    async function loadB2BData() {
+      try {
+        const response = await fetch('b2b-all-geocoded.json');
+        const b2bData = await response.json();
+        console.log(`✅ Loaded ${b2bData.length} B2B partners`);
+        return b2bData;
+      } catch (error) {
+        console.error('❌ Failed to load B2B data:', error);
+        return [];
+      }
+    }
+
+    // GPS Tracking Functions
+    async function fetchVehiclePositions() {
+      try {
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const proxyURL = isGitHubPages
+          ? 'https://rotakt-harta.vercel.app/api/gps'
+          : '/api/gps';
+
+        const response = await fetch(proxyURL, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) throw new Error(`GPS Proxy error: ${response.status}`);
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Unknown GPS API error');
+        }
+
+        console.log(`✅ GPS API SUCCESS: ${data.count} vehicule`);
+        return data.vehicles;
+      } catch (error) {
+        console.error('❌ Failed to fetch vehicle positions:', error);
+        return [];
+      }
+    }
+
+    function createVehicleMarker(vehicle) {
+      const colorIndex = (vehicle.id % 17) + 1;
+      const color = getComputedStyle(document.documentElement).getPropertyValue(`--color-${colorIndex}`).trim() || '#ef4444';
+
+      const icon = L.divIcon({
+        html: `<div style="
+          background: ${color};
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        ">🚗</div>`,
+        className: '',
+        iconSize: [32, 32]
+      });
+
+      const marker = L.marker([parseFloat(vehicle.lat), parseFloat(vehicle.lon)], { icon });
+
+      const speed = parseFloat(vehicle.speed) || 0;
+      const status = vehicle.isStopped ? 'Oprit' : (speed > 5 ? 'În mișcare' : 'Idle');
+      const plate = vehicle.license_plate || '-';
+      const driver = vehicle.driverName || 'N/A';
+
+      const popupContent = `
+        <div style="font-family: 'Inter', sans-serif; min-width: 220px;">
+          <h3 style="margin: 0 0 8px 0; color: ${color}; font-size: 16px;">🚗 ${vehicle.name || `Vehicul #${vehicle.id}`}</h3>
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>Număr:</strong> ${plate}
+          </div>
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>Status:</strong> ${status} (${speed.toFixed(0)} km/h)
+          </div>
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>Șofer:</strong> ${driver}
+          </div>
+          <div style="font-size: 13px; color: #64748b;">
+            <strong>Kilometraj:</strong> ${Math.round(vehicle.odo || 0)} km
+          </div>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+      return marker;
+    }
+
+    async function toggleVehicles() {
+      const checkbox = document.getElementById('showVehicles');
+      const selector = document.getElementById('vehicleSelector');
+      vehiclesVisible = checkbox.checked;
+
+      if (vehiclesVisible) {
+        const vehicles = await fetchVehiclePositions();
+
+        if (vehicles.length === 0) {
+          alert('⚠️ Nu s-au putut încărca vehiculele. Verifică:\n1. API Key corect\n2. URL endpoint corect\n3. Console (F12) pentru detalii eroare.');
+          checkbox.checked = false;
+          return;
+        }
+
+        availableVehicles = vehicles;
+
+        populateVehicleSelector(vehicles);
+        selector.style.display = 'block';
+
+        selectedVehicleIds = new Set(vehicles.map(v => v.id));
+
+        updateVehicleMarkers();
+
+        document.getElementById('vehicleCount').textContent = `${vehicles.length}`;
+        document.getElementById('totalVehicles').textContent = `${vehicles.length} vehicule`;
+        console.log(`✅ ${vehicles.length} vehicule încărcate`);
+
+        vehicleRefreshInterval = setInterval(async () => {
+          const freshVehicles = await fetchVehiclePositions();
+          availableVehicles = freshVehicles;
+          updateVehicleMarkers();
+          console.log(`🔄 Vehicule refreshed: ${freshVehicles.length}`);
+        }, 30000);
+      } else {
+        vehicleMarkers.forEach(m => map.removeLayer(m));
+        vehicleMarkers = [];
+        selector.style.display = 'none';
+        document.getElementById('vehicleCount').textContent = '0';
+        document.getElementById('totalVehicles').textContent = '0 vehicule';
+
+        if (vehicleRefreshInterval) {
+          clearInterval(vehicleRefreshInterval);
+          vehicleRefreshInterval = null;
+        }
+      }
+    }
+
+    function populateVehicleSelector(vehicles) {
+      const vehicleList = document.getElementById('vehicleList');
+      vehicleList.innerHTML = '';
+
+      vehicles.forEach((vehicle, index) => {
+        const colorIndex = (vehicle.id % 17) + 1;
+
+        const container = document.createElement('div');
+        container.className = 'vehicle-checkbox-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `vehicle-${vehicle.id}`;
+        checkbox.checked = true;
+        checkbox.onchange = () => toggleVehicleSelection(vehicle.id);
+
+        const label = document.createElement('label');
+        label.htmlFor = `vehicle-${vehicle.id}`;
+        label.className = 'vehicle-checkbox-label';
+        label.innerHTML = `
+          <span class="vehicle-dot color-${colorIndex}"></span>
+          <strong>${vehicle.name || vehicle.license_plate}</strong>
+          <span style="color: #64748b;">${vehicle.isStopped ? '(Oprit)' : '(Activ)'}</span>
+        `;
+
+        container.appendChild(checkbox);
+        container.appendChild(label);
+        vehicleList.appendChild(container);
+      });
+    }
+
+    function toggleVehicleSelection(vehicleId) {
+      if (selectedVehicleIds.has(vehicleId)) {
+        selectedVehicleIds.delete(vehicleId);
+      } else {
+        selectedVehicleIds.add(vehicleId);
+      }
+      updateVehicleMarkers();
+    }
+
+    function selectAllVehicles() {
+      selectedVehicleIds = new Set(availableVehicles.map(v => v.id));
+      availableVehicles.forEach(v => {
+        const checkbox = document.getElementById(`vehicle-${v.id}`);
+        if (checkbox) checkbox.checked = true;
+      });
+      updateVehicleMarkers();
+    }
+
+    function deselectAllVehicles() {
+      selectedVehicleIds.clear();
+      availableVehicles.forEach(v => {
+        const checkbox = document.getElementById(`vehicle-${v.id}`);
+        if (checkbox) checkbox.checked = false;
+      });
+      updateVehicleMarkers();
+    }
+
+    function updateVehicleMarkers() {
+      vehicleMarkers.forEach(m => map.removeLayer(m));
+      vehicleMarkers = [];
+
+      availableVehicles.forEach(vehicle => {
+        if (selectedVehicleIds.has(vehicle.id) && vehicle.lat && vehicle.lon) {
+          const marker = createVehicleMarker(vehicle);
+          marker.addTo(map);
+          vehicleMarkers.push(marker);
+        }
+      });
+
+      const selectedCount = selectedVehicleIds.size;
+      const totalCount = availableVehicles.length;
+      document.getElementById('vehicleCount').textContent = `${selectedCount}/${totalCount}`;
+    }
+
+    // Mode Switching
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById('browseModeBtn').classList.toggle('active', mode === 'browse');
+      document.getElementById('planModeBtn').classList.toggle('active', mode === 'plan');
+      document.getElementById('browseMode').classList.toggle('active', mode === 'browse');
+      document.getElementById('planMode').classList.toggle('active', mode === 'plan');
+
+      if (mode === 'plan') {
+        loadPlanMode();
+      } else {
+        loadBrowseMode();
+      }
+    }
+
+    function loadBrowseMode() {
+      planMarkers.forEach(m => map.removeLayer(m));
+      planMarkers = [];
+      routeLayer.clearLayers();
+
+      browseMarkers = L.markerClusterGroup();
+      window.uniqueData.forEach(p => {
+        if (p.lat && p.lon) {
+          const marker = L.marker([p.lat, p.lon]);
+          marker.bindPopup(createPopup(p));
+          browseMarkers.addLayer(marker);
+        }
+      });
+      map.addLayer(browseMarkers);
+    }
+
+    function loadPlanMode() {
+      if (browseMarkers) map.removeLayer(browseMarkers);
+
+      window.uniqueData.forEach(p => {
+        if (p.lat && p.lon) {
+          const marker = L.marker([p.lat, p.lon]);
+          marker.bindPopup(createPopup(p));
+          marker.on('click', () => addToRoute(p));
+          planMarkers.push(marker);
+          map.addLayer(marker);
+        }
+      });
+
+      updateUI();
+    }
+
+    function createPopup(p) {
+      return `<div style="font-family: Inter, sans-serif; min-width: 200px;">
+        <h3 style="margin: 0 0 8px; color: #3b82f6; font-size: 16px;">${p.partener}</h3>
+        <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;"><strong>Zonă:</strong> ${p.zona || '-'}</div>
+        <div style="font-size: 13px; color: #64748b;"><strong>Localitate:</strong> ${p.localitate || '-'}</div>
+      </div>`;
+    }
+
+    // Route Planning Functions
+    function addToRoute(partner) {
+      const current = days[currentDayIndex].partners;
+
+      if (current.find(p => p.partener === partner.partener)) {
+        alert('⚠️ Partenerul este deja în rută!');
+        return;
+      }
+
+      current.push(partner);
+      updateUI();
+      saveToStorage();
+    }
+
+    function removeFromRoute(index) {
+      days[currentDayIndex].partners.splice(index, 1);
+      updateUI();
+      saveToStorage();
+    }
+
+    function clearDay() {
+      if (confirm('Ștergi toate punctele din această zi?')) {
+        days[currentDayIndex].partners = [];
+        days[currentDayIndex].distance = 0;
+        updateUI();
+        saveToStorage();
+      }
+    }
+
+    function newDay() {
+      days.push({ partners: [], distance: 0, color: dayColors[days.length % dayColors.length] });
+      currentDayIndex = days.length - 1;
+      updateUI();
+      saveToStorage();
+    }
+
+    function prevDay() {
+      if (currentDayIndex > 0) {
+        currentDayIndex--;
+        updateUI();
+      }
+    }
+
+    function nextDay() {
+      if (currentDayIndex < days.length - 1) {
+        currentDayIndex++;
+        updateUI();
+      }
+    }
+
+    async function optimizeRoute() {
+      const current = days[currentDayIndex].partners;
+
+      if (current.length < 2) {
+        alert('⚠️ Trebuie minim 2 puncte pentru optimizare!');
+        return;
+      }
+
+      alert('🚀 Optimizare în curs...');
+
+      // OSRM routing optimization
+      const coords = current.map(p => `${p.lon},${p.lat}`).join(';');
+      const osrmURL = `https://router.project-osrm.org/trip/v1/driving/${coords}?overview=full&geometries=geojson`;
+
+      try {
+        const response = await fetch(osrmURL);
+        const data = await response.json();
+
+        if (data.code === 'Ok') {
+          const trip = data.trips[0];
+          const waypointIndices = trip.waypoints.map(w => w.waypoint_index);
+          const optimized = waypointIndices.map(i => current[i]);
+
+          days[currentDayIndex].partners = optimized;
+          days[currentDayIndex].distance = (trip.distance / 1000).toFixed(1);
+
+          updateUI();
+          saveToStorage();
+
+          alert(`✅ Rută optimizată!\n${trip.distance / 1000} km • ${Math.round(trip.duration / 60)} min`);
+        } else {
+          throw new Error('OSRM optimization failed');
+        }
+      } catch (error) {
+        console.error('❌ Optimization error:', error);
+        alert('❌ Optimizare eșuată! Verifică consola pentru detalii.');
+      }
+    }
+
+    function toggleItinerary() {
+      itineraryVisible = !itineraryVisible;
+
+      if (itineraryVisible) {
+        const content = days.map((d, i) => `
+          <div style="margin-bottom: 16px;">
+            <div style="font-weight: 600; color: #3b82f6; margin-bottom: 8px;">
+              Day ${i + 1} • ${d.partners.length} stops • ${d.distance} km
+            </div>
+            ${d.partners.map((p, j) => `
+              <div style="font-size: 13px; color: #cbd5e1; margin-left: 16px;">
+                ${j + 1}. ${p.partener} <span style="color: #64748b;">(${p.localitate || '-'})</span>
+              </div>
+            `).join('')}
+          </div>
+        `).join('');
+
+        alert(content || 'Nicio rută salvată.');
+      }
+    }
+
+    function updateUI() {
+      const current = days[currentDayIndex].partners;
+
+      document.getElementById('currentDay').textContent = currentDayIndex + 1;
+      document.getElementById('totalDays').textContent = days.length;
+
+      const selectedList = document.getElementById('selectedList');
+      selectedList.innerHTML = current.map((p, i) => `
+        <div class="selected-item">
+          <span>${i + 1}. ${p.partener}</span>
+          <button class="remove-btn" onclick="removeFromRoute(${i})">×</button>
+        </div>
+      `).join('');
+
+      // Draw route on map
+      routeLayer.clearLayers();
+
+      if (current.length > 1) {
+        const coords = current.map(p => [p.lat, p.lon]);
+        L.polyline(coords, { color: days[currentDayIndex].color, weight: 3 }).addTo(routeLayer);
+      }
+    }
+
+    // Lasso Selection
+    function toggleLassoMode() {
+      lassoMode = !lassoMode;
+
+      if (lassoMode) {
+        map.getContainer().style.cursor = 'crosshair';
+        map.on('click', lassoMapClick);
+        alert('✅ Lasso mode ACTIVE\n\nDesenează poligon:\n• Click pentru fiecare punct\n• Double-click pentru a închide');
+      } else {
+        map.getContainer().style.cursor = '';
+        map.off('click', lassoMapClick);
+        map.off('dblclick', lassoFinish);
+
+        if (lassoPolygon) {
+          map.removeLayer(lassoPolygon);
+          lassoPolygon = null;
+        }
+        lassoPoints = [];
+      }
+    }
+
+    function lassoMapClick(e) {
+      lassoPoints.push([e.latlng.lat, e.latlng.lng]);
+
+      if (lassoPolygon) {
+        map.removeLayer(lassoPolygon);
+      }
+
+      lassoPolygon = L.polygon(lassoPoints, {
+        color: '#22c55e',
+        weight: 2,
+        fillOpacity: 0.2
+      }).addTo(map);
+
+      if (lassoPoints.length >= 3) {
+        map.on('dblclick', lassoFinish);
+      }
+    }
+
+    function lassoFinish(e) {
+      if (lassoPoints.length < 3) {
+        alert('⚠️ Trebuie minim 3 puncte!');
+        return;
+      }
+
+      const polygon = lassoPolygon.getLatLngs()[0];
+      const selected = [];
+
+      window.uniqueData.forEach(partner => {
+        const point = L.latLng(partner.lat, partner.lon);
+        if (isPointInPolygon(point, polygon)) {
+          selected.push(partner);
+        }
+      });
+
+      if (selected.length === 0) {
+        alert('⚠️ Niciun partener găsit!');
+        toggleLassoMode();
+        return;
+      }
+
+      const current = days[currentDayIndex].partners;
+      let added = 0;
+
+      selected.forEach(p => {
+        if (!current.find(existing => existing.partener === p.partener)) {
+          current.push(p);
+          added++;
+        }
+      });
+
+      alert(`✅ ${added} parteneri adăugați!`);
+
+      updateUI();
+      toggleLassoMode();
+    }
+
+    function isPointInPolygon(point, polygon) {
+      let inside = false;
+      const x = point.lat, y = point.lng;
+
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+
+        if (intersect) inside = !inside;
+      }
+
+      return inside;
+    }
+
+    // Starting Point
+    function setStartingPoint() {
+      if (currentMode !== 'plan') {
+        alert('⚠️ Trebuie să fii în modul "Plan Routes"!');
+        return;
+      }
+
+      const current = days[currentDayIndex].partners;
+
+      if (startingPoint) {
+        const hqIndex = current.findIndex(p => p.status === 'HQ');
+        if (hqIndex !== -1) {
+          current.splice(hqIndex, 1);
+        }
+        startingPoint = null;
+        updateUI();
+        alert('✅ Punct de plecare șters.');
+        return;
+      }
+
+      startingPoint = ROTAKT_HQ;
+
+      const hqIndex = current.findIndex(p => p.status === 'HQ');
+      if (hqIndex !== -1) {
+        current.splice(hqIndex, 1);
+      }
+
+      current.unshift(startingPoint);
+      updateUI();
+      alert('✅ ROTAKT HQ adăugat ca punct de plecare!');
+    }
+
+    // Storage
+    function loadFromStorage() {
+      const saved = localStorage.getItem('rotakt-routes');
+      const savedDay = localStorage.getItem('rotakt-current-day');
+      if (saved) {
+        try {
+          days = JSON.parse(saved);
+          currentDayIndex = parseInt(savedDay || '0');
+          console.log(`✅ Loaded ${days.length} days from storage`);
+        } catch (e) {
+          console.warn('⚠️ Failed to load routes:', e);
+        }
+      }
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem('rotakt-routes', JSON.stringify(days));
+        localStorage.setItem('rotakt-current-day', currentDayIndex.toString());
+      } catch (e) {
+        console.error('❌ Failed to save routes:', e);
+      }
+    }
+
+    // Initialize Map
+    async function initMap(b2bData) {
+      document.getElementById('totalPoints').textContent = b2bData.length;
+
+      map = L.map('map').setView([45.9432, 24.9668], 7);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      browseMarkers = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 50
+      });
+
+      b2bData.forEach(partner => {
+        if (partner.lat && partner.lon) {
+          const marker = L.marker([partner.lat, partner.lon]);
+          marker.bindPopup(createPopup(partner));
+          browseMarkers.addLayer(marker);
+        }
+      });
+
+      map.addLayer(browseMarkers);
+      routeLayer = L.layerGroup().addTo(map);
+
+      console.log(`✅ Map loaded: ${b2bData.length} B2B partners`);
+    }
+
+    // App Initialization
+    async function init() {
+      const b2bData = await loadB2BData();
+
+      // Deduplication
+      const seen = new Map();
+      const reversed = [...b2bData].reverse();
+      const unique = reversed.filter(item => {
+        const key = item.partener.toLowerCase().trim();
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.set(key, true);
+        return true;
+      });
+      window.uniqueData = unique.reverse();
+
+      console.log(`✅ Deduplicated: ${window.uniqueData.length} partners (removed ${b2bData.length - window.uniqueData.length})`);
+
+      loadFromStorage();
+      await initMap(window.uniqueData);
+    }
+
+    // Start app
+    init();
+
+    // Define CSS custom properties for vehicle colors
+    const style = document.createElement('style');
+    style.textContent = `
+      :root {
+        --color-1: #ef4444;
+        --color-2: #f59e0b;
+        --color-3: #10b981;
+        --color-4: #3b82f6;
+        --color-5: #8b5cf6;
+        --color-6: #ec4899;
+        --color-7: #06b6d4;
+        --color-8: #84cc16;
+        --color-9: #f97316;
+        --color-10: #14b8a6;
+        --color-11: #6366f1;
+        --color-12: #a855f7;
+        --color-13: #eab308;
+        --color-14: #22c55e;
+        --color-15: #0ea5e9;
+        --color-16: #d946ef;
+        --color-17: #fb923c;
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>
