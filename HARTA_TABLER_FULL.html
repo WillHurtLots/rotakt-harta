@@ -535,9 +535,10 @@
     async function loadB2BData() {
       try {
         const response = await fetch('b2b-all-geocoded.json');
-        const b2bData = await response.json();
-        console.log(`✅ Loaded ${b2bData.length} B2B partners`);
-        return b2bData;
+        const data = await response.json();
+        const partners = data.allB2BGeocoded || [];
+        console.log(`✅ Loaded ${partners.length} B2B partners`);
+        return partners;
       } catch (error) {
         console.error('❌ Failed to load B2B data:', error);
         return [];
