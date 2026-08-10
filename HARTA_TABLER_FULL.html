@@ -29,7 +29,7 @@
     }
 
     .page-wrapper {
-      flex: 1;
+      height: 100vh;
       display: flex;
       overflow: hidden;
     }
@@ -366,23 +366,20 @@
 </head>
 <body>
   <div class="page">
-    <!-- Header -->
-    <header class="navbar navbar-dark" style="background: #0f172a; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-      <div class="container-fluid">
-        <h1 class="navbar-brand">
-          <i class="ti ti-map-2"></i>
-          ROTAKT Fleet Manager
-        </h1>
-        <div class="navbar-nav">
-          <span class="badge bg-blue-lt" id="totalVehicles">0 vehicule</span>
-        </div>
-      </div>
-    </header>
-
     <!-- Main Content -->
     <div class="page-wrapper">
       <!-- Sidebar -->
       <aside class="sidebar-left">
+        <!-- Title -->
+        <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+          <h1 style="font-size: 16px; font-weight: 700; color: #3b82f6; margin: 0 0 4px 0;">
+            <i class="ti ti-map-2"></i> ROTAKT Fleet Manager
+          </h1>
+          <div style="font-size: 10px; color: #64748b;">
+            <span id="totalVehicles">0 vehicule</span>
+          </div>
+        </div>
+
         <!-- Stats -->
         <div class="stats-grid">
           <div class="stat-card">
