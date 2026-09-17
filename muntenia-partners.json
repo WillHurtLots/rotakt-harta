@@ -1,0 +1,162 @@
+﻿[
+    {
+        "partener":  "TOMAS BICICLETE SHOP S.R.L.",
+        "agent":  "GeorgelLazar",
+        "localitate":  "PLOIESTI",
+        "ca_total":  610288,
+        "lat":  44.942789,
+        "lon":  26.0229643
+    },
+    {
+        "partener":  "Flamicom SRL",
+        "agent":  "GeorgelLazar",
+        "localitate":  "GIURGIU",
+        "ca_total":  503507,
+        "lat":  43.906614,
+        "lon":  25.9667392
+    },
+    {
+        "partener":  "SPR AGROCOM S.R.L.",
+        "agent":  "GeorgelLazar",
+        "localitate":  "1 DECEMBRIE",
+        "ca_total":  57533,
+        "lat":  44.3114728,
+        "lon":  26.0633438
+    },
+    {
+        "partener":  "ADA TRADING SRL",
+        "agent":  "GeorgelLazar",
+        "localitate":  "OTOPENI",
+        "ca_total":  35853,
+        "lat":  44.5454419,
+        "lon":  26.070241
+    },
+    {
+        "partener":  "ADA TRADING SRL",
+        "agent":  "GeorgelLazar",
+        "localitate":  "OTOPENI",
+        "ca_total":  35853,
+        "lat":  44.5454419,
+        "lon":  26.070241
+    },
+    {
+        "partener":  "WEBAMO NEXT IDEA S.R.L.",
+        "agent":  "GeorgelLazar",
+        "localitate":  "BUZAU",
+        "ca_total":  29613,
+        "lat":  45.3795512,
+        "lon":  27.0484966
+    },
+    {
+        "partener":  "WEBAMO NEXT IDEA S.R.L.",
+        "agent":  "GeorgelLazar",
+        "localitate":  "BUZAU",
+        "ca_total":  29613,
+        "lat":  45.3785838,
+        "lon":  27.0474317
+    },
+    {
+        "partener":  "Bady Design SRL",
+        "agent":  "GeorgelLazar",
+        "localitate":  "CHIRNOGI",
+        "ca_total":  14239,
+        "lat":  44.1068853,
+        "lon":  26.5874806
+    },
+    {
+        "partener":  "DKR S.R.L.",
+        "agent":  "GeorgelLazar",
+        "localitate":  "COSAMBESTI",
+        "ca_total":  10379,
+        "lat":  44.5614752,
+        "lon":  27.4387253
+    },
+    {
+        "partener":  "D\u0026S MARKET S.R.L.",
+        "agent":  "GeorgelLazar",
+        "localitate":  "MAHMUDIA",
+        "ca_total":  6321,
+        "lat":  45.080812,
+        "lon":  29.0901068
+    },
+    {
+        "partener":  "COMFOREX IMPEX SRL",
+        "agent":  "GeorgelLazar",
+        "localitate":  "CONSTANTA",
+        "ca_total":  1193,
+        "lat":  44.1711655,
+        "lon":  28.615073
+    },
+    {
+        "partener":  "ACL MOBILE CAR WASH SRL",
+        "agent":  "GeorgelLazar",
+        "localitate":  "BISTRITA",
+        "ca_total":  725,
+        "lat":  47.1431429,
+        "lon":  24.5129111
+    },
+    {
+        "partener":  "TOMAS BICICLETE SHOP S.R.L.",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "PLOIESTI",
+        "ca_total":  453611,
+        "lat":  44.942789,
+        "lon":  26.0229643
+    },
+    {
+        "partener":  "Flamicom SRL",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "GIURGIU",
+        "ca_total":  171113,
+        "lat":  43.906614,
+        "lon":  25.9667392
+    },
+    {
+        "partener":  "Bady Design SRL",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "CHIRNOGI",
+        "ca_total":  40368,
+        "lat":  44.1068853,
+        "lon":  26.5874806
+    },
+    {
+        "partener":  "SPR AGROCOM S.R.L.",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "1 DECEMBRIE",
+        "ca_total":  39872,
+        "lat":  44.3114728,
+        "lon":  26.0633438
+    },
+    {
+        "partener":  "D\u0026S MARKET S.R.L.",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "MAHMUDIA",
+        "ca_total":  26514,
+        "lat":  45.080812,
+        "lon":  29.0901068
+    },
+    {
+        "partener":  "ADA TRADING SRL",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "OTOPENI",
+        "ca_total":  24759,
+        "lat":  44.5454419,
+        "lon":  26.070241
+    },
+    {
+        "partener":  "ADA TRADING SRL",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "OTOPENI",
+        "ca_total":  24759,
+        "lat":  44.5454419,
+        "lon":  26.070241
+    },
+    {
+        "partener":  "DKR S.R.L.",
+        "agent":  "Ovidiu AndreiSepreusan",
+        "localitate":  "COSAMBESTI",
+        "ca_total":  8795,
+        "lat":  44.5614752,
+        "lon":  27.4387253
+    }
+]
